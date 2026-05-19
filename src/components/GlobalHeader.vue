@@ -19,8 +19,7 @@
         />
       </a-col>
 
-      <a-col flex="120px">
-        <!-- 改造后的用户登录状态区域 -->
+      <a-col flex="none">
         <div class="user-login-status">
           <div v-if="loginUserStore.loginUser.id">
             <a-space size="24">
@@ -33,9 +32,10 @@
 
               <!-- 🔧 修复：移除重复的 <a-dropdown> 标签，补全闭合 -->
               <a-dropdown>
-                <a-space style="cursor: pointer">
+                <a-space style="cursor: pointer" :wrap="false">
                   <a-avatar :src="loginUserStore.loginUser.userAvatar" />
-                  <span :class="userRoleClass">
+
+                  <span :class="[userRoleClass, 'user-name-text']">
                     {{ loginUserStore.loginUser.userName ?? 'nameless' }}
                   </span>
                 </a-space>
@@ -397,5 +397,15 @@ const doLogout = async () => {
 .vip-name {
   color: #ff4d4f !important;
   font-weight: bold !important;
+}
+
+/* 🚨 新增：防止名字过长破坏布局，超长则自动显示省略号 */
+.user-name-text {
+  max-width: 120px; /* 限制名字最大显示宽度，可以根据需要微调 */
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: bottom; /* 确保名字和头像对齐 */
 }
 </style>

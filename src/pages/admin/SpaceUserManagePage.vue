@@ -57,16 +57,10 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { deleteSpace, listSpaceByPage } from '@/api/SpaceController.ts'
 import dayjs from 'dayjs'
-import { useLoginSpaceStore } from '@/stores/useLoginSpaceStore.ts'
 import {
-  SPACE_LEVEL_ENUM,
-  SPACE_LEVEL_MAP,
-  SPACE_LEVEL_OPTIONS,
   SPACE_ROLE_OPTIONS,
 } from '@/constants/space.ts'
-import { formatSize } from '@/utils'
 import {
   addSpaceUser,
   deleteSpaceUser,

@@ -7,7 +7,7 @@
         <div class="avatar">
           <img src="https://picsum.photos/200/200" alt="个人头像" />
         </div>
-        <h1 class="hero-title">你好，我是 <span class="text-primary">XXX</span></h1>
+        <h1 class="hero-title">你好，我是 <span class="text-primary">创作者</span></h1>
         <p class="hero-subtitle">一名全栈开发者 | 云图库项目创作者 | 热爱技术与创作</p>
         <div class="hero-buttons">
           <a href="#about" class="btn btn-primary">了解更多</a>

@@ -1,11 +1,23 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 
+// 区分开发和生产环境
+// 🚨 优雅解法：直接让生产环境走相对路径 '/api'
+const DEV_BASE_URL = "http://localhost:8123/api"; // 加上 /api 供本地开发
+const PROD_BASE_URL = '/api';
+
+// 创建 Axios 实例
 const myAxios = axios.create({
-  baseURL: 'http://localhost:8123/api',
-  timeout: 60000,
+  baseURL: PROD_BASE_URL, // 这样线上环境会自动拼接为 http://162.14.65.216/api/...
+  timeout: 10000,
   withCredentials: true,
-})
+});
+
+// const myAxios = axios.create({
+//   baseURL: 'http://localhost:8123/api',
+//   timeout: 60000,
+//   withCredentials: true,
+// })
 
 // 添加请求拦截器
 myAxios.interceptors.request.use(function (config) {

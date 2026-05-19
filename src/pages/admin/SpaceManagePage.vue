@@ -106,9 +106,8 @@
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { deleteSpace, listSpaceByPage } from '@/api/SpaceController.ts'
+import { deleteSpace, listSpaceByPage } from '@/api/spaceController.ts'
 import dayjs from 'dayjs'
-import { useLoginSpaceStore } from '@/stores/useLoginSpaceStore.ts'
 import {
   SPACE_LEVEL_ENUM,
   SPACE_LEVEL_MAP,
