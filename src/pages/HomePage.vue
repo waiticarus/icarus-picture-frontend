@@ -1,7 +1,6 @@
 <template>
   <div id="homePage">
     <div class="search-bar">
-      <!--  搜索框  -->
       <a-input-search
         v-model:value="searchParams.searchText"
         placeholder="从海量图片中搜索"
@@ -30,40 +29,30 @@
       </a-space>
     </div>
 
-    <!-- 图片列表 -->
-    <PictureList :dataList="dataList" :loading="loading" />
-    <a-pagination
-      style="text-align: right"
-      v-model:current="searchParams.current"
-      v-model:pageSize="searchParams.pageSize"
-      :total="total"
-      @change="doPageChange"
-    />
+    <!-- 瀑布流图片列表 -->
+    <PictureList :dataList="dataList" :loading="loading" :waterfall="true" />
+
+    <!-- 加载指示器 -->
+    <div ref="loadMoreRef" class="load-more">
+      <a-spin v-if="loadingMore" tip="加载中..." />
+      <span v-else-if="noMore" class="no-more">—— 已经到底啦 ——</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, effect, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import {
-  listPictureByPage,
-  listPictureTagCategory,
   listPictureVoByPage,
+  listPictureTagCategory,
 } from '@/api/pictureController.ts'
 import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
 import PictureList from '@/components/PictureList.vue'
 
-// 刚进页面时的转圈加载
 const loading = ref(true)
-
-const msg = '欢迎欣赏和上传优美图片'
+const loadingMore = ref(false)
+const noMore = ref(false)
 const dataList = ref<API.PictureVO[]>([])
-
-// 点击图片后跳转至详情页
-const router = useRouter()
-
-
-const total = ref(0)
 
 const searchParams = reactive<API.PictureQueryRequest>({
   current: 1,
@@ -72,46 +61,69 @@ const searchParams = reactive<API.PictureQueryRequest>({
   sortOrder: 'descend',
 })
 
-const fetchData = async () => {
-  loading.value = true
-  // 转换搜索参数
-  const params = {
-    ...searchParams,
-    tags: [] as string[],
-  }
-
-  if (selectedCategoryList.value !== 'all') {
-    params.category = selectedCategoryList.value
-  }
+const buildParams = (): API.PictureQueryRequest => {
+  const tags: string[] = []
   selectedTagList.value.forEach((useTag, index) => {
-    if (useTag) {
-      params.tags.push(tagList.value[index])
-    }
+    if (useTag) tags.push(tagList.value[index])
   })
+  const params: API.PictureQueryRequest = { ...searchParams }
+  if (tags.length > 0) params.tags = tags
+  if (selectedCategoryList.value !== 'all') params.category = selectedCategoryList.value
+  return params
+}
 
+const fetchData = async (reset: boolean) => {
+  if (reset) {
+    loading.value = true
+    searchParams.current = 1
+    noMore.value = false
+  } else {
+    if (noMore.value || loadingMore.value) return
+    loadingMore.value = true
+  }
+
+  const params = buildParams()
   const res = await listPictureVoByPage(params)
   if (res.data.code === 0 && res.data.data) {
-    dataList.value = res.data.data.records ?? []
-    total.value = res.data.data.total ?? 0
+    const records = res.data.data.records ?? []
+    const total = res.data.data.total ?? 0
+    if (reset) {
+      dataList.value = records
+    } else {
+      dataList.value.push(...records)
+    }
+    if (dataList.value.length >= total) {
+      noMore.value = true
+    }
   } else {
     message.error('获取数据失败' + res.data.message)
   }
   loading.value = false
+  loadingMore.value = false
 }
+
+// 无限滚动 - IntersectionObserver
+const loadMoreRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 onMounted(() => {
-  fetchData()
+  fetchData(true)
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && !loading.value && !loadingMore.value && !noMore.value) {
+        searchParams.current++
+        fetchData(false)
+      }
+    },
+    { rootMargin: '200px' }
+  )
+  if (loadMoreRef.value) observer.observe(loadMoreRef.value)
 })
 
-const doPageChange = (page: number, pageSize: number) => {
-  searchParams.current = page
-  searchParams.pageSize = pageSize
-  fetchData()
-}
-
+// 搜索/筛选时重置
 const doSearch = () => {
-  searchParams.current = 1
-  fetchData()
+  fetchData(true)
 }
 
 const categoryList = ref<string[]>([])
@@ -147,5 +159,15 @@ onMounted(() => {
 
 #homePage .tag-bar {
   margin-bottom: 16px;
+}
+
+.load-more {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.no-more {
+  color: #ccc;
+  font-size: 13px;
 }
 </style>

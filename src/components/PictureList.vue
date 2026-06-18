@@ -1,5 +1,38 @@
 <template>
   <div class="picture-list">
+    <!-- 瀑布流布局（主页使用） -->
+    <div v-if="waterfall" class="waterfall-container">
+      <a-skeleton v-if="loading" active :paragraph="{ rows: 6 }" />
+      <div v-else class="waterfall-grid">
+        <div
+          v-for="picture in dataList"
+          :key="picture.id"
+          class="waterfall-item"
+          @click="onClickPicture(picture)"
+        >
+          <img
+            :alt="picture.name"
+            :src="picture.thumbnailUrl ?? picture.url"
+            class="waterfall-img"
+            :style="{
+              aspectRatio: picture.picWidth && picture.picHeight
+                ? `${picture.picWidth} / ${picture.picHeight}`
+                : undefined,
+              backgroundColor: picture.picColor ?? '#f0f0f0',
+            }"
+          />
+          <div class="waterfall-info">
+            <span class="waterfall-name">{{ picture.name ?? '未命名' }}</span>
+            <a-tag color="green" size="small">
+              {{ picture.category ?? '默认' }}
+            </a-tag>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 网格布局（空间使用） -->
+    <template v-else>
     <!-- 图片列表 -->
     <a-list
       :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }"
@@ -40,6 +73,7 @@
       </template>
     </a-list>
     <ShareModal ref="shareModalRef" :link="shareLink" />
+    </template>
   </div>
 </template>
 
@@ -68,6 +102,7 @@ interface Props {
   onReload?: () => void
   canEdit?: boolean
   canDelete?: boolean
+  waterfall?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -76,6 +111,7 @@ const props = withDefaults(defineProps<Props>(), {
   showOp: false,
   canEdit: false,
   canDelete: false,
+  waterfall: false,
 })
 
 // 点击图片后跳转至详情页
@@ -139,4 +175,68 @@ const doShare = (picture, e) => {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+/* ===== 瀑布流布局 ===== */
+.waterfall-container {
+  margin: 0 auto;
+}
+
+.waterfall-grid {
+  column-count: 4;
+  column-gap: 16px;
+}
+
+.waterfall-item {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.waterfall-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.waterfall-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.waterfall-info {
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.waterfall-name {
+  font-size: 13px;
+  color: #333;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* 响应式列数 */
+@media (max-width: 576px) {
+  .waterfall-grid { column-count: 1; }
+}
+@media (min-width: 577px) and (max-width: 768px) {
+  .waterfall-grid { column-count: 2; }
+}
+@media (min-width: 769px) and (max-width: 1200px) {
+  .waterfall-grid { column-count: 3; }
+}
+@media (min-width: 1201px) {
+  .waterfall-grid { column-count: 4; }
+}
+</style>
