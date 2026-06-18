@@ -4,33 +4,30 @@
     <div class="desc">企业级智能协同云图库</div>
     <a-form :model="formState" name="basic" autocomplete="off" @finish="handleSubmit">
       <a-form-item
-        label="用户账号"
         name="userAccount"
         :rules="[{ required: true, message: '请输入账号' }]"
       >
-        <a-input v-model:value="formState.userAccount" placeholder="请输入账号" />
+        <a-input v-model:value="formState.userAccount" placeholder="请输入账号" size="large" />
       </a-form-item>
 
       <a-form-item
-        label="用户密码"
         name="userPassword"
         :rules="[
           { required: true, message: '请输入密码' },
           { min: 6, message: '密码长度不能小于6位' },
         ]"
       >
-        <a-input-password v-model:value="formState.userPassword" placeholder="请输入密码" />
+        <a-input-password v-model:value="formState.userPassword" placeholder="请输入密码" size="large" />
       </a-form-item>
 
       <a-form-item
-        label="确认密码"
         name="checkPassword"
         :rules="[
           { required: true, message: '请再次输入密码' },
           { min: 6, message: '密码长度不能小于6位' },
         ]"
       >
-        <a-input-password v-model:value="formState.checkPassword" placeholder="请再次输入密码" />
+        <a-input-password v-model:value="formState.checkPassword" placeholder="请再次输入密码" size="large" />
       </a-form-item>
 
       <div class="tips">
@@ -39,62 +36,90 @@
       </div>
 
       <a-form-item>
-        <a-button type="primary" html-type="submit" style="width: 100%">注册</a-button>
+        <a-button type="primary" html-type="submit" style="width: 100%" size="large" :loading="loading">
+          注册
+        </a-button>
       </a-form-item>
     </a-form>
+
+    <SliderCaptcha
+      v-model:visible="captchaVisible"
+      @verified="onCaptchaVerified"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { reactive } from 'vue'
-import { userLogin, userRegister } from '@/api/userController.ts'
-import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
+import { reactive, ref } from 'vue'
+import { userRegister } from '@/api/userController.ts'
 import { message } from 'ant-design-vue'
 import router from '@/router'
+import SliderCaptcha from '@/components/SliderCaptcha.vue'
 
-const loginUserStore = useLoginUserStore()
+const loading = ref(false)
+const captchaVisible = ref(false)
+let capturedCaptchaId = ''
+let capturedCaptchaOffset = 0
 
 const formState = reactive<API.UserRegisterRequest>({
   userAccount: '',
   userPassword: '',
   checkPassword: '',
-  // remember: true,
+  captchaId: '',
+  captchaOffset: 0,
 })
-const handleSubmit = async (values: any) => {
-  if (values.userPassword !== values.checkPassword) {
-    message.error('两次输入密码不一致');
-    return;
-  }
 
-  const res = await userRegister(values)
-  if (res.data.code === 0 && res.data.data) {
-    message.success('注册成功')
-    router.push({
-      path: '/user/login',
-      replace: true,
+const handleSubmit = async () => {
+  if (formState.userPassword !== formState.checkPassword) {
+    message.error('两次输入密码不一致')
+    return
+  }
+  // 先弹出滑块验证码
+  captchaVisible.value = true
+}
+
+const onCaptchaVerified = async (captchaId: string, offset: number) => {
+  capturedCaptchaId = captchaId
+  capturedCaptchaOffset = offset
+  captchaVisible.value = false
+
+  loading.value = true
+  try {
+    const res = await userRegister({
+      ...formState,
+      captchaId: capturedCaptchaId,
+      captchaOffset: capturedCaptchaOffset,
     })
-  } else {
-    message.error('注册失败' + res.data.message)
+    if (res.data.code === 0 && res.data.data) {
+      message.success('注册成功')
+      router.push({
+        path: '/user/login',
+        replace: true,
+      })
+    } else {
+      message.error('注册失败：' + (res.data.message || '请重试'))
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>
 
 <style scoped>
 #UserRegisterPage {
-  max-width: 360px;
+  max-width: 400px;
   margin: 0 auto;
 }
 
 .title {
   text-align: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .desc {
   text-align: center;
   color: #bbb;
-  margin-top: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .tips {

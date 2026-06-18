@@ -769,6 +769,8 @@ declare namespace API {
   type UserLoginRequest = {
     userAccount?: string
     userPassword?: string
+    captchaId?: string
+    captchaOffset?: number
   }
 
   type UserLoginVO = {
@@ -798,6 +800,40 @@ declare namespace API {
     userEmail?: string
   }
 
+  type UserEmailLoginRequest = {
+    email?: string
+    code?: string
+    captchaId?: string
+    captchaOffset?: number
+  }
+
+  type UserSendEmailCodeRequest = {
+    email?: string
+    captchaId?: string
+    captchaOffset?: number
+    scene?: number
+  }
+
+  type UserBindEmailRequest = {
+    email?: string
+    code?: string
+  }
+
+  type CaptchaVO = {
+    captchaId?: string
+    backgroundImage?: string
+    sliderImage?: string
+    sliderY?: number
+    sliderWidth?: number
+    sliderHeight?: number
+  }
+
+  type BaseResponseCaptchaVO = {
+    code?: number
+    data?: CaptchaVO
+    message?: string
+  }
+
   type UserQueryRequest = {
     current?: number
     pageSize?: number
@@ -822,6 +858,8 @@ declare namespace API {
     userAccount?: string
     userPassword?: string
     checkPassword?: string
+    captchaId?: string
+    captchaOffset?: number
   }
 
   type UserUpdateProfileRequest = {

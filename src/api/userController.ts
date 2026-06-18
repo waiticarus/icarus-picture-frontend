@@ -152,3 +152,56 @@ export async function redeemVipCode(
     ...(options || {}),
   })
 }
+
+/** 获取滑块验证码 POST /user/captcha */
+export async function getCaptcha(options?: { [key: string]: any }) {
+  return request<API.BaseResponseCaptchaVO>('/user/captcha', {
+    method: 'POST',
+    ...(options || {}),
+  })
+}
+
+/** 发送邮箱验证码 POST /user/send-email-code */
+export async function sendEmailCode(
+  body: API.UserSendEmailCodeRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseBoolean>('/user/send-email-code', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** QQ邮箱登录 POST /user/login/email */
+export async function userEmailLogin(
+  body: API.UserEmailLoginRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseUserLoginVO>('/user/login/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}
+
+/** 绑定邮箱 POST /user/bind-email */
+export async function bindUserEmail(
+  body: API.UserBindEmailRequest,
+  options?: { [key: string]: any }
+) {
+  return request<API.BaseResponseUserVO>('/user/bind-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  })
+}

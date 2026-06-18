@@ -74,14 +74,33 @@
               !loginUser.userEmail ? '⚠️ 提示：邮箱一旦绑定成功，后续如需修改请联系管理员。' : ''
             "
           >
-            <a-input
-              v-if="!loginUser.userEmail"
-              v-model:value="formData.userEmail"
-              placeholder="请输入要绑定的邮箱地址"
-              size="large"
-            >
-              <template #prefix><mail-outlined style="color: rgba(0, 0, 0, 0.25)" /></template>
-            </a-input>
+            <div v-if="!loginUser.userEmail" class="email-bind-section">
+              <a-input
+                v-model:value="emailForm.email"
+                placeholder="请输入要绑定的QQ邮箱"
+                size="large"
+                :disabled="emailForm.emailSent"
+                style="margin-bottom: 8px"
+              >
+                <template #prefix><mail-outlined style="color: rgba(0, 0, 0, 0.25)" /></template>
+              </a-input>
+              <div class="email-bind-actions">
+                <a-button
+                  type="dashed"
+                  :disabled="sendBindCodeDisabled"
+                  @click="handleSendBindCode"
+                >
+                  {{ bindSendBtnText }}
+                </a-button>
+                <a-input
+                  v-if="emailForm.emailSent"
+                  v-model:value="emailForm.bindCode"
+                  placeholder="请输入6位验证码"
+                  :maxlength="6"
+                  style="width: 160px; margin-left: 8px"
+                />
+              </div>
+            </div>
             <div v-else class="bound-email-box">
               <check-circle-filled style="color: #52c41a; margin-right: 8px" />
               <span>已绑定：{{ loginUser.userEmail }}</span>
@@ -114,11 +133,17 @@
         </a-form>
       </div>
     </a-card>
+
+    <SliderCaptcha
+      v-model:visible="captchaVisible"
+      ref="captchaRef"
+      @verified="onCaptchaVerified"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   PlusOutlined,
@@ -127,8 +152,9 @@ import {
   CheckCircleFilled,
 } from '@ant-design/icons-vue'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
-import { updateUserProfile } from '@/api/userController.ts'
+import { updateUserProfile, bindUserEmail, sendEmailCode } from '@/api/userController.ts'
 import { uploadAvatarFile } from '@/api/pictureController.ts'
+import SliderCaptcha from '@/components/SliderCaptcha.vue'
 
 const loginUserStore = useLoginUserStore()
 const loginUser = loginUserStore.loginUser
@@ -167,9 +193,62 @@ const formData = reactive<API.UserUpdateProfileRequest>({
   userEmail: loginUser.userEmail || '',
 })
 
+const emailForm = reactive({
+  email: '',
+  bindCode: '',
+  emailSent: false,
+})
+
+const captchaRef = ref<InstanceType<typeof SliderCaptcha> | null>(null)
+const captchaVisible = ref(false)
 const previewUrl = ref<string | undefined>(loginUser.userAvatar)
 const originFile = ref<File | null>(null)
 const saving = ref(false)
+
+// 邮箱验证码倒计时
+const bindCountdown = ref(0)
+const sendBindCodeDisabled = computed(() => bindCountdown.value > 0)
+const bindSendBtnText = computed(() => {
+  if (emailForm.emailSent && bindCountdown.value > 0) return `${bindCountdown.value}秒后重发`
+  return '发送验证码'
+})
+
+let bindCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+const handleSendBindCode = async () => {
+  if (!emailForm.email || !/^[a-zA-Z0-9._%+\-]+@qq\.com$/.test(emailForm.email)) {
+    message.warning('请先输入正确的QQ邮箱')
+    return
+  }
+  captchaVisible.value = true
+}
+
+const onCaptchaVerified = async (captchaId: string, offset: number) => {
+  captchaVisible.value = false
+  try {
+    const res = await sendEmailCode({
+      email: emailForm.email,
+      captchaId,
+      captchaOffset: offset,
+      scene: 2,
+    })
+    if (res.data.code === 0) {
+      message.success('验证码已发送，请查收QQ邮箱')
+      emailForm.emailSent = true
+      bindCountdown.value = 60
+      bindCountdownTimer = setInterval(() => {
+        bindCountdown.value--
+        if (bindCountdown.value <= 0) {
+          if (bindCountdownTimer) clearInterval(bindCountdownTimer)
+        }
+      }, 1000)
+    } else {
+      message.error(res.data.message || '发送失败')
+    }
+  } catch {
+    message.error('发送失败，请检查网络')
+  }
+}
 
 const handleBeforeUpload = (file: File) => {
   const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png'
@@ -190,6 +269,25 @@ const handleBeforeUpload = (file: File) => {
 const handleSubmit = async () => {
   saving.value = true
   try {
+    // 如果用户正在绑定新邮箱，先绑定邮箱
+    if (!loginUser.userEmail && emailForm.emailSent && emailForm.bindCode) {
+      const bindRes = await bindUserEmail({
+        email: emailForm.email,
+        code: emailForm.bindCode,
+      })
+      if (bindRes.data.code !== 0) {
+        message.error('邮箱绑定失败：' + (bindRes.data.message || '请重试'))
+        saving.value = false
+        return
+      }
+      // 更新用户信息
+      loginUserStore.setLoginUser({
+        ...loginUser,
+        userEmail: emailForm.email,
+      })
+      message.success('邮箱绑定成功')
+    }
+
     let finalAvatarUrl = loginUser.userAvatar
 
     if (originFile.value) {
@@ -198,12 +296,14 @@ const handleSubmit = async () => {
         finalAvatarUrl = uploadRes.data.data
       } else {
         message.error('头像上传失败：' + uploadRes.data.message)
+        saving.value = false
         return
       }
     }
 
     const updateRes = await updateUserProfile({
       ...formData,
+      userEmail: loginUser.userEmail || '',
       userAvatar: finalAvatarUrl,
     })
 
@@ -368,6 +468,15 @@ const handleSubmit = async () => {
   align-items: center;
   color: #333;
   font-weight: 500;
+}
+
+.email-bind-section {
+  width: 100%;
+}
+
+.email-bind-actions {
+  display: flex;
+  align-items: center;
 }
 
 /* 按钮微动效 */
