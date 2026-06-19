@@ -210,10 +210,13 @@ const handleMouseLeave = () => {
 
 .floating-sider {
   height: 100%;
-  background: #ffffff;
-  /* 去掉右侧以外的阴影，让它和顶部导航栏融合得更自然 */
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
   padding-top: 16px;
+  border-radius: 0 12px 12px 0;
 }
 
 :deep(.ant-menu) {

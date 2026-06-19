@@ -20,4 +20,9 @@ import zhCN from 'ant-design-vue/es/locale/zh_CN'
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 全局底层：确保登录/注册页背景图片完美铺满，无白边 */
+#app {
+  background: transparent;
+}
+</style>

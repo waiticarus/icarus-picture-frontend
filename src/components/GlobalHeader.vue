@@ -90,7 +90,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, h, reactive, ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, h, ref, onMounted, onUnmounted, watch } from 'vue'
 import {
   HomeOutlined,
   LogoutOutlined,
@@ -98,11 +98,16 @@ import {
   SolutionOutlined,
   BellOutlined,
   MailOutlined,
+  PictureOutlined,
+  AppstoreOutlined,
+  IdcardOutlined,
+  TeamOutlined,
+  PlusCircleOutlined,
 } from '@ant-design/icons-vue'
 import { MenuProps, message, notification } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
-import { listUserVoPage, userLogout } from '@/api/userController.ts'
+import { userLogout } from '@/api/userController.ts'
 import { getSysMessageList } from '@/api/sysMessageController.ts'
 
 const loginUserStore = useLoginUserStore()
@@ -125,26 +130,31 @@ const originItems = [
   },
   {
     key: '/admin/userManage',
+    icon: () => h(TeamOutlined),
     label: '用户管理',
     title: '用户管理',
   },
   {
     key: '/add_picture',
+    icon: () => h(PlusCircleOutlined),
     label: '创建图片',
     title: '创建图片',
   },
   {
     key: '/admin/pictureManage',
+    icon: () => h(PictureOutlined),
     label: '图片管理',
     title: '图片管理',
   },
   {
     key: '/admin/spaceManage',
+    icon: () => h(AppstoreOutlined),
     label: '空间管理',
     title: '空间管理',
   },
   {
     key: '/introduction',
+    icon: () => h(IdcardOutlined),
     label: '个人介绍',
     title: '个人介绍',
   },
@@ -332,48 +342,144 @@ const doLogout = async () => {
 </script>
 
 <style scoped>
-/* 1. 外层容器作为占位符，强制撑开 64px 高度。防止内部元素 fixed 脱离文档流后，页面下方内容塌陷被遮盖 */
+/* ============================================
+   导航栏 — 柔和毛玻璃 · 图标化菜单 · 圆润轻量
+   ============================================ */
+
+/* 外层占位，防止下方内容塌陷 */
 #globalHeader {
   height: 64px;
 }
 
-/* 2. 真正吸顶的是内部的 header-row。使用 fixed 彻底无视所有父组件的 overflow 限制 */
+/* ---- 吸顶 row：毛玻璃核心 ---- */
 .header-row {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%; /* 强制宽度 100%，彻底盖住右侧的暗色边距 */
+  width: 100%;
   height: 64px;
   z-index: 1000;
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  /* 半透明毛玻璃 — 让背景图片微微透出 */
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+
+  /* 柔和阴影替代硬边框 */
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 2px 16px rgba(0, 0, 0, 0.04);
+
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   box-sizing: border-box;
-  padding: 0 24px; /* 增加左右内边距，使内容不贴着屏幕边缘 */
-  margin: 0 !important; /* 强制去除 a-row 默认的负边距，防止出现横向滚动条 */
-  align-items: center; /* 确保内部元素完美垂直居中 */
+  padding: 0 32px;
+  margin: 0 !important;
+  align-items: center;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* 往下滚动后导航栏稍微变实一点（后续可用 JS 加 class 触发） */
+.header-row.scrolled {
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- 左侧 Logo 区 ---- */
 .title-bar {
   display: flex;
   align-items: center;
-}
-
-.title {
-  color: black;
-  font-size: 18px;
-  margin-left: 16px;
+  gap: 12px;
 }
 
 .logo {
-  height: 48px;
+  height: 40px;
+  width: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
 }
 
-/* 去掉 Ant Design 菜单自带的底部灰线，让导航栏看着更清爽无界 */
+.title {
+  color: #1a1a2e;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #3b3b5c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Ant Design 水平菜单覆盖 ---- */
 :deep(.ant-menu-horizontal) {
-  border-bottom: none;
-  line-height: 64px; /* 让菜单项和整个导航栏高度一致 */
+  border-bottom: none !important;
+  line-height: 64px;
+  background: transparent;
+  font-size: 15px;
 }
 
+/* 每个菜单项 */
+:deep(.ant-menu-horizontal .ant-menu-item) {
+  margin: 0 2px;
+  padding: 0 18px;
+  border-radius: 10px;
+  color: #3a3a4a;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+/* 菜单项的图标 */
+:deep(.ant-menu-horizontal .ant-menu-item .anticon) {
+  font-size: 17px;
+  margin-right: 6px;
+  color: #7c7c94;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+/* hover — 柔和的背景高亮 */
+:deep(.ant-menu-horizontal .ant-menu-item:hover) {
+  background: rgba(22, 119, 255, 0.06) !important;
+  color: #1677ff;
+}
+
+:deep(.ant-menu-horizontal .ant-menu-item:hover .anticon) {
+  color: #1677ff;
+  transform: translateY(-1px);
+}
+
+/* 选中态 */
+:deep(.ant-menu-horizontal .ant-menu-item-selected) {
+  background: rgba(22, 119, 255, 0.08) !important;
+  color: #1677ff;
+  font-weight: 600;
+}
+
+:deep(.ant-menu-horizontal .ant-menu-item-selected::after) {
+  display: none !important; /* 去掉 Ant Design 自带的底部蓝条 */
+}
+
+/* 用底部小圆点替代选中指示 */
+:deep(.ant-menu-horizontal .ant-menu-item-selected::before) {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #1677ff;
+  opacity: 0.7;
+}
+
+:deep(.ant-menu-horizontal .ant-menu-item-selected .anticon) {
+  color: #1677ff;
+}
+
+/* ---- 右侧用户区 ---- */
 .user-login-status {
   display: flex;
   align-items: center;
@@ -381,7 +487,24 @@ const doLogout = async () => {
   height: 100%;
 }
 
-/* 🚨 将不同角色的炫酷昵称样式同步到全局顶部栏 */
+/* 铃铛按钮 */
+:deep(.ant-btn-text) {
+  color: #5a5a72;
+  transition: color 0.25s, background 0.25s;
+}
+
+:deep(.ant-btn-text:hover) {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.06);
+}
+
+/* 头像下拉 — 柔和 hover */
+:deep(.ant-avatar) {
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+  transition: box-shadow 0.25s;
+}
+
+/* ---- 角色彩名 ---- */
 .admin-name {
   background: linear-gradient(90deg, #ff512f, #dd2476, #4facfe, #00f2fe);
   -webkit-background-clip: text;
@@ -396,16 +519,16 @@ const doLogout = async () => {
 
 .vip-name {
   color: #ff4d4f !important;
-  font-weight: bold !important;
+  font-weight: 700 !important;
 }
 
-/* 🚨 新增：防止名字过长破坏布局，超长则自动显示省略号 */
 .user-name-text {
-  max-width: 120px; /* 限制名字最大显示宽度，可以根据需要微调 */
+  max-width: 120px;
   display: inline-block;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  vertical-align: bottom; /* 确保名字和头像对齐 */
+  vertical-align: bottom;
+  font-size: 14px;
 }
 </style>
