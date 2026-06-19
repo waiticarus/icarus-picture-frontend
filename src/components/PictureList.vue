@@ -1,31 +1,37 @@
 <template>
   <div class="picture-list">
-    <!-- 瀑布流布局（主页使用） -->
+    <!-- 瀑布流布局（主页使用，JS 分配列，新增图片不扰动已有排版） -->
     <div v-if="waterfall" class="waterfall-container">
       <a-skeleton v-if="loading" active :paragraph="{ rows: 6 }" />
-      <div v-else class="waterfall-grid">
+      <div v-else class="waterfall-rows">
         <div
-          v-for="picture in dataList"
-          :key="picture.id"
-          class="waterfall-item"
-          @click="onClickPicture(picture)"
+          v-for="(col, ci) in waterfallColumns"
+          :key="ci"
+          class="waterfall-col"
         >
-          <img
-            :alt="picture.name"
-            :src="picture.thumbnailUrl ?? picture.url"
-            class="waterfall-img"
-            :style="{
-              aspectRatio: picture.picWidth && picture.picHeight
-                ? `${picture.picWidth} / ${picture.picHeight}`
-                : undefined,
-              backgroundColor: picture.picColor ?? '#f0f0f0',
-            }"
-          />
-          <div class="waterfall-info">
-            <span class="waterfall-name">{{ picture.name ?? '未命名' }}</span>
-            <a-tag color="green" size="small">
-              {{ picture.category ?? '默认' }}
-            </a-tag>
+          <div
+            v-for="picture in col"
+            :key="picture.id"
+            class="waterfall-item"
+            @click="onClickPicture(picture)"
+          >
+            <img
+              :alt="picture.name"
+              :src="picture.thumbnailUrl ?? picture.url"
+              class="waterfall-img"
+              :style="{
+                aspectRatio: picture.picWidth && picture.picHeight
+                  ? `${picture.picWidth} / ${picture.picHeight}`
+                  : undefined,
+                backgroundColor: picture.picColor ?? '#f0f0f0',
+              }"
+            />
+            <div class="waterfall-info">
+              <span class="waterfall-name">{{ picture.name ?? '未命名' }}</span>
+              <a-tag color="green" size="small">
+                {{ picture.category ?? '默认' }}
+              </a-tag>
+            </div>
           </div>
         </div>
       </div>
@@ -78,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import {
   deletePicture,
   listPictureByPage,
@@ -112,6 +118,83 @@ const props = withDefaults(defineProps<Props>(), {
   canEdit: false,
   canDelete: false,
   waterfall: false,
+})
+
+// 瀑布流固定列分配：新图片始终放入当前最矮的列，已有图片位置不变
+const waterfallColumns = ref<API.PictureVO[][]>([])
+const colCount = ref(4)
+let resizeObserver: ResizeObserver | null = null
+
+const updateColCount = () => {
+  const w = window.innerWidth
+  if (w <= 576) colCount.value = 1
+  else if (w <= 768) colCount.value = 2
+  else if (w <= 1200) colCount.value = 3
+  else colCount.value = 4
+}
+
+const distributeAll = (pictures: API.PictureVO[]) => {
+  const cols: API.PictureVO[][] = Array.from({ length: colCount.value }, () => [])
+  const getColEstimatedHeight = (col: API.PictureVO[]) =>
+    col.reduce((sum, p) => {
+      if (p.picWidth && p.picHeight) return sum + p.picHeight / p.picWidth
+      return sum + 1
+    }, 0)
+  for (const pic of pictures) {
+    let minIdx = 0
+    let minH = getColEstimatedHeight(cols[0])
+    for (let i = 1; i < colCount.value; i++) {
+      const h = getColEstimatedHeight(cols[i])
+      if (h < minH) { minH = h; minIdx = i }
+    }
+    cols[minIdx].push(pic)
+  }
+  waterfallColumns.value = cols
+}
+
+// 监听 dataList 变化：区分全量替换和追加
+watch(
+  () => props.dataList,
+  (newList, oldList) => {
+    if (!props.waterfall) return
+    if (!oldList || oldList.length === 0 || newList.length < oldList.length) {
+      distributeAll(newList)
+    } else if (newList.length > oldList.length) {
+      // 追加：将新增图片分配到已有列
+      const appended = newList.slice(oldList.length)
+      const cols = waterfallColumns.value
+      const getColEstimatedHeight = (col: API.PictureVO[]) =>
+        col.reduce((sum, p) => {
+          if (p.picWidth && p.picHeight) return sum + p.picHeight / p.picWidth
+          return sum + 1
+        }, 0)
+      for (const pic of appended) {
+        let minIdx = 0
+        let minH = getColEstimatedHeight(cols[0])
+        for (let i = 1; i < colCount.value; i++) {
+          const h = getColEstimatedHeight(cols[i])
+          if (h < minH) { minH = h; minIdx = i }
+        }
+        cols[minIdx].push(pic)
+      }
+    }
+  },
+  { deep: false }
+)
+
+onMounted(() => {
+  updateColCount()
+  resizeObserver = new ResizeObserver(() => {
+    updateColCount()
+  })
+  resizeObserver.observe(document.documentElement)
+})
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
 })
 
 // 点击图片后跳转至详情页
@@ -181,14 +264,20 @@ const doShare = (picture, e) => {
   margin: 0 auto;
 }
 
-.waterfall-grid {
-  column-count: 4;
-  column-gap: 16px;
+.waterfall-rows {
+  display: flex;
+  gap: 16px;
+}
+
+.waterfall-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .waterfall-item {
-  break-inside: avoid;
-  margin-bottom: 16px;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
@@ -228,15 +317,12 @@ const doShare = (picture, e) => {
 
 /* 响应式列数 */
 @media (max-width: 576px) {
-  .waterfall-grid { column-count: 1; }
+  .waterfall-col:nth-child(n+2) { display: none; }
 }
 @media (min-width: 577px) and (max-width: 768px) {
-  .waterfall-grid { column-count: 2; }
+  .waterfall-col:nth-child(n+3) { display: none; }
 }
 @media (min-width: 769px) and (max-width: 1200px) {
-  .waterfall-grid { column-count: 3; }
-}
-@media (min-width: 1201px) {
-  .waterfall-grid { column-count: 4; }
+  .waterfall-col:nth-child(n+4) { display: none; }
 }
 </style>

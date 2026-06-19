@@ -79,6 +79,7 @@ const fetchData = async (reset: boolean) => {
     noMore.value = false
   } else {
     if (noMore.value || loadingMore.value) return
+    searchParams.current++
     loadingMore.value = true
   }
 
@@ -90,7 +91,8 @@ const fetchData = async (reset: boolean) => {
     if (reset) {
       dataList.value = records
     } else {
-      dataList.value.push(...records)
+      // 创建新数组引用，确保 PictureList 内的 watch 能检测到变化
+      dataList.value = [...dataList.value, ...records]
     }
     if (dataList.value.length >= total) {
       noMore.value = true
@@ -106,19 +108,33 @@ const fetchData = async (reset: boolean) => {
 const loadMoreRef = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 
-onMounted(() => {
-  fetchData(true)
-
+const setupObserver = () => {
+  if (observer) observer.disconnect()
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting && !loading.value && !loadingMore.value && !noMore.value) {
-        searchParams.current++
+      if (entries[0].isIntersecting && !loadingMore.value && !noMore.value) {
         fetchData(false)
       }
     },
-    { rootMargin: '200px' }
+    { rootMargin: '300px' }
   )
   if (loadMoreRef.value) observer.observe(loadMoreRef.value)
+}
+
+onMounted(() => {
+  fetchData(true).then(() => {
+    // 首次加载完成后注册 observer，并检查是否立即需要加载更多
+    setupObserver()
+    // 如果首屏数据不足一页，自动加载下一页
+    setTimeout(() => {
+      if (loadMoreRef.value) {
+        const rect = loadMoreRef.value.getBoundingClientRect()
+        if (rect.top < window.innerHeight + 300 && !noMore.value && !loadingMore.value) {
+          fetchData(false)
+        }
+      }
+    }, 100)
+  })
 })
 
 // 搜索/筛选时重置
