@@ -13,14 +13,13 @@ export default class PictureEditWebSocket {
    * 初始化 WebSocket 连接
    */
   connect() {
-    const DEV_BASE_URL = 'ws://localhost:8123'
-    const PROD_BASE_URL = 'ws://162.14.65.216'
+    // 开发环境走本地，生产环境跟随当前域名/IP（由 Nginx 反代）
+    const isDev = import.meta.env.DEV
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsBaseUrl = isDev ? 'ws://localhost:8123' : `${wsProtocol}//${window.location.host}`
 
-    const url = `${PROD_BASE_URL}/api/ws/picture/edit?pictureId=${this.pictureId}`
+    const url = `${wsBaseUrl}/api/ws/picture/edit?pictureId=${this.pictureId}`
     this.socket = new WebSocket(url)
-
-    // const url = `ws://localhost:8123/api/ws/picture/edit?pictureId=${this.pictureId}`
-    // this.socket = new WebSocket(url)
 
     // 设置携带 cookie
     this.socket.binaryType = 'blob'

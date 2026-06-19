@@ -239,8 +239,8 @@ const initSSE = () => {
   // 3. 清理可能处于关闭状态的旧连接实体
   clearSSE()
 
-  // 4. 使用绝对路径，彻底避开 Vite 代理盲区
-  const backendUrl = 'http://localhost:8123/api/sse/connect'
+  // 4. 使用相对路径，生产环境由 Nginx 反代 /api 到后端
+  const backendUrl = '/api/sse/connect'
   console.log(`====== [前端 SSE] 准备向 ${backendUrl} 发起连接... ======`)
 
   // 5. 创建 EventSource
