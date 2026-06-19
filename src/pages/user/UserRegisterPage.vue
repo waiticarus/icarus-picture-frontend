@@ -8,8 +8,8 @@
 
     <div class="login-card">
       <div class="header">
-        <h2 class="title">icarus云图库</h2>
-        <div class="desc">企业级智能协同云图库</div>
+        <h2 class="title">icarusの图片</h2>
+        <div class="desc">精美插画与壁纸收集地</div>
       </div>
 
       <a-form

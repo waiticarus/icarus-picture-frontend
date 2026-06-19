@@ -14,8 +14,8 @@
 
     <div class="login-card">
       <div class="header">
-        <h2 class="title">icarus云图库</h2>
-        <div class="desc">企业级智能协同云图库</div>
+        <h2 class="title">icarusの图片</h2>
+        <div class="desc">精美插画与壁纸收集地</div>
       </div>
 
       <a-tabs v-model:activeKey="activeTab" centered class="login-tabs">
@@ -356,8 +356,12 @@ const doSendCode = async () => {
 
 /* Ken Burns 呼吸放大动画 */
 @keyframes breathe {
-  0%   { transform: scale(1); }
-  100% { transform: scale(1.06); }
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.06);
+  }
 }
 
 /* 半透明压暗遮罩 — 让文字和卡片可读 */
@@ -384,7 +388,9 @@ const doSendCode = async () => {
     0 1px 3px rgba(0, 0, 0, 0.04),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.55);
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 .login-card:hover {

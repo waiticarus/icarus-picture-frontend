@@ -1,11 +1,11 @@
 <template>
   <div id="globalHeader">
     <a-row class="header-row" :wrap="false">
-      <a-col flex="200px">
+      <a-col flex="none">
         <router-link to="/">
           <div class="title-bar">
             <img class="logo" src="../assets/logo.png" alt="logo" />
-            <div class="title">icarus云图库</div>
+            <div class="title">icarusの图片网站</div>
           </div>
         </router-link>
       </a-col>
@@ -375,7 +375,9 @@ const doLogout = async () => {
   padding: 0 32px;
   margin: 0 !important;
   align-items: center;
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 /* 往下滚动后导航栏稍微变实一点（后续可用 JS 加 class 触发） */
@@ -394,18 +396,36 @@ const doLogout = async () => {
 }
 
 .logo {
-  height: 40px;
-  width: 40px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
+  /* 1. 微微放大：从 40px 增加到 48px，更醒目但不会撑爆 64px 的导航栏 */
+  height: 48px;
+  width: 48px;
+  object-fit: cover;
+
+  /* 2. 消除死板边界的核心：径向渐变遮罩 (Mask) */
+  /* 从中心到 65% 的区域完全清晰，65% 到边缘逐渐变透明，实现完美的“羽化融入”效果 */
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 65%, rgba(0, 0, 0, 0) 100%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1) 65%, rgba(0, 0, 0, 0) 100%);
+
+  /* 3. 增强质感：配合一点点契合你主题色的微弱发光阴影 */
+  filter: drop-shadow(0 2px 6px rgba(38, 208, 206, 0.4));
+
+  /* 4. （可选）加一点微动效：鼠标悬浮时再微微放大一点，增加灵动感 */
+  transition: transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .title {
-  color: #1a1a2e;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #3b3b5c 100%);
+  font-family: 'Montserrat', 'Segoe UI', 'PingFang SC', sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  font-style: italic; /* 灵魂斜体 */
+  letter-spacing: 2px;
+
+  /* 深蓝到电竞蓝的冷色调渐变 */
+  background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -436,7 +456,9 @@ const doLogout = async () => {
   font-size: 17px;
   margin-right: 6px;
   color: #7c7c94;
-  transition: color 0.25s ease, transform 0.25s ease;
+  transition:
+    color 0.25s ease,
+    transform 0.25s ease;
 }
 
 /* hover — 柔和的背景高亮 */
@@ -490,7 +512,9 @@ const doLogout = async () => {
 /* 铃铛按钮 */
 :deep(.ant-btn-text) {
   color: #5a5a72;
-  transition: color 0.25s, background 0.25s;
+  transition:
+    color 0.25s,
+    background 0.25s;
 }
 
 :deep(.ant-btn-text:hover) {

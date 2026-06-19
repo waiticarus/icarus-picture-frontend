@@ -4,11 +4,7 @@
     <div v-if="waterfall" class="waterfall-container">
       <a-skeleton v-if="loading" active :paragraph="{ rows: 6 }" />
       <div v-else class="waterfall-rows">
-        <div
-          v-for="(col, ci) in waterfallColumns"
-          :key="ci"
-          class="waterfall-col"
-        >
+        <div v-for="(col, ci) in waterfallColumns" :key="ci" class="waterfall-col">
           <div
             v-for="picture in col"
             :key="picture.id"
@@ -20,9 +16,10 @@
               :src="picture.thumbnailUrl ?? picture.url"
               class="waterfall-img"
               :style="{
-                aspectRatio: picture.picWidth && picture.picHeight
-                  ? `${picture.picWidth} / ${picture.picHeight}`
-                  : undefined,
+                aspectRatio:
+                  picture.picWidth && picture.picHeight
+                    ? `${picture.picWidth} / ${picture.picHeight}`
+                    : undefined,
                 backgroundColor: picture.picColor ?? '#f0f0f0',
               }"
             />
@@ -39,58 +36,53 @@
 
     <!-- 网格布局（空间使用） -->
     <template v-else>
-    <!-- 图片列表 -->
-    <a-list
-      :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }"
-      :data-source="dataList"
-      :loading="loading"
-    >
-      <template #renderItem="{ item: picture }">
-        <a-list-item style="padding: 0">
-          <!-- 单张图片 -->
-          <a-card hoverable @click="onClickPicture(picture)">
-            <template #cover>
-              <img
-                :alt="picture.name"
-                :src="picture.thumbnailUrl ?? picture.url"
-                style="height: 180px; object-fit: cover"
-              />
-            </template>
-            <a-card-meta :title="picture.name">
-              <template #description>
-                <a-flex>
-                  <a-tag color="green">
-                    {{ picture.category ?? '默认' }}
-                  </a-tag>
-                  <a-tag v-for="tag in picture.tags" :key="tag">
-                    {{ tag }}
-                  </a-tag>
-                </a-flex>
+      <!-- 图片列表 -->
+      <a-list
+        :grid="{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }"
+        :data-source="dataList"
+        :loading="loading"
+      >
+        <template #renderItem="{ item: picture }">
+          <a-list-item style="padding: 0">
+            <!-- 单张图片 -->
+            <a-card hoverable @click="onClickPicture(picture)">
+              <template #cover>
+                <img
+                  :alt="picture.name"
+                  :src="picture.thumbnailUrl ?? picture.url"
+                  style="height: 180px; object-fit: cover"
+                />
               </template>
-            </a-card-meta>
-            <template v-if="showOp" #actions>
-              <ShareAltOutlined @click="(e) => doShare(picture, e)" />
-              <SearchOutlined @click="(e) => doSearch(picture, e)" />
-              <EditOutlined v-if="canEdit" @click="(e) => doEdit(picture, e)" />
-              <DeleteOutlined v-if="canDelete" @click="(e) => doDelete(picture, e)" />
-            </template>
-          </a-card>
-        </a-list-item>
-      </template>
-    </a-list>
-    <ShareModal ref="shareModalRef" :link="shareLink" />
+              <a-card-meta :title="picture.name">
+                <template #description>
+                  <a-flex>
+                    <a-tag color="green">
+                      {{ picture.category ?? '默认' }}
+                    </a-tag>
+                    <a-tag v-for="tag in picture.tags" :key="tag">
+                      {{ tag }}
+                    </a-tag>
+                  </a-flex>
+                </template>
+              </a-card-meta>
+              <template v-if="showOp" #actions>
+                <ShareAltOutlined @click="(e) => doShare(picture, e)" />
+                <SearchOutlined @click="(e) => doSearch(picture, e)" />
+                <EditOutlined v-if="canEdit" @click="(e) => doEdit(picture, e)" />
+                <DeleteOutlined v-if="canDelete" @click="(e) => doDelete(picture, e)" />
+              </template>
+            </a-card>
+          </a-list-item>
+        </template>
+      </a-list>
+      <ShareModal ref="shareModalRef" :link="shareLink" />
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue'
-import {
-  deletePicture,
-  listPictureByPage,
-  listPictureTagCategory,
-  listPictureVoByPage,
-} from '@/api/pictureController.ts'
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue'
+import { deletePicture } from '@/api/pictureController.ts'
 import { message } from 'ant-design-vue'
 import { useRouter } from 'vue-router'
 import {
@@ -130,6 +122,7 @@ const updateColCount = () => {
   if (w <= 576) colCount.value = 1
   else if (w <= 768) colCount.value = 2
   else if (w <= 1200) colCount.value = 3
+  else if (w <= 1600) colCount.value = 3
   else colCount.value = 4
 }
 
@@ -145,7 +138,10 @@ const distributeAll = (pictures: API.PictureVO[]) => {
     let minH = getColEstimatedHeight(cols[0])
     for (let i = 1; i < colCount.value; i++) {
       const h = getColEstimatedHeight(cols[i])
-      if (h < minH) { minH = h; minIdx = i }
+      if (h < minH) {
+        minH = h
+        minIdx = i
+      }
     }
     cols[minIdx].push(pic)
   }
@@ -173,13 +169,16 @@ watch(
         let minH = getColEstimatedHeight(cols[0])
         for (let i = 1; i < colCount.value; i++) {
           const h = getColEstimatedHeight(cols[i])
-          if (h < minH) { minH = h; minIdx = i }
+          if (h < minH) {
+            minH = h
+            minIdx = i
+          }
         }
         cols[minIdx].push(pic)
       }
     }
   },
-  { deep: false }
+  { deep: false },
 )
 
 onMounted(() => {
@@ -204,8 +203,6 @@ const onClickPicture = (picture: API.PictureVO) => {
     path: `/picture/${picture.id}`,
   })
 }
-
-const total = ref(0)
 
 const doEdit = (picture, e) => {
   // 阻止冒泡
@@ -261,12 +258,13 @@ const doShare = (picture, e) => {
 <style scoped>
 /* ===== 瀑布流布局 ===== */
 .waterfall-container {
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .waterfall-rows {
   display: flex;
-  gap: 16px;
+  gap: 20px;
 }
 
 .waterfall-col {
@@ -274,21 +272,23 @@ const doShare = (picture, e) => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
 .waterfall-item {
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
 }
 
 .waterfall-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .waterfall-img {
@@ -298,7 +298,7 @@ const doShare = (picture, e) => {
 }
 
 .waterfall-info {
-  padding: 10px 12px;
+  padding: 12px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -306,9 +306,9 @@ const doShare = (picture, e) => {
 }
 
 .waterfall-name {
-  font-size: 13px;
-  color: #333;
-  font-weight: 500;
+  font-size: 14px;
+  color: #1a1a2e;
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -317,12 +317,23 @@ const doShare = (picture, e) => {
 
 /* 响应式列数 */
 @media (max-width: 576px) {
-  .waterfall-col:nth-child(n+2) { display: none; }
+  .waterfall-col:nth-child(n + 2) {
+    display: none;
+  }
 }
 @media (min-width: 577px) and (max-width: 768px) {
-  .waterfall-col:nth-child(n+3) { display: none; }
+  .waterfall-col:nth-child(n + 3) {
+    display: none;
+  }
 }
 @media (min-width: 769px) and (max-width: 1200px) {
-  .waterfall-col:nth-child(n+4) { display: none; }
+  .waterfall-col:nth-child(n + 4) {
+    display: none;
+  }
+}
+@media (min-width: 1201px) and (max-width: 1600px) {
+  .waterfall-col:nth-child(n + 4) {
+    display: none;
+  }
 }
 </style>
