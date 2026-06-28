@@ -1,7 +1,7 @@
 <template>
-  <div id="globalSider" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
-    <!-- 左侧悬停触发条 -->
-    <div class="hover-trigger" v-show="collapsed && !pinned"></div>
+  <div id="globalSider">
+    <!-- 左侧悬停触发条（仅8px宽，鼠标必须贴近左边界才触发） -->
+    <div class="hover-trigger" v-show="collapsed && !pinned" @mouseenter="handleMouseEnter"></div>
 
     <!-- 折叠态浮动展开按钮 -->
     <div
@@ -20,6 +20,7 @@
       v-if="loginUserStore.loginUser.id"
       class="floating-sider"
       :class="{ 'is-pinned': pinned, 'is-collapsed': collapsed }"
+      @mouseleave="handleMouseLeave"
     >
       <!-- 侧边栏头部 -->
       <div class="sider-header">
@@ -230,6 +231,8 @@ const handleMouseLeave = () => {
   top: 64px;
   left: 0;
   z-index: 990;
+  width: 0;
+  overflow: visible;
   height: calc(100vh - 64px);
 }
 
