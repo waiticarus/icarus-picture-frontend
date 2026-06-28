@@ -19,7 +19,8 @@
       width="220"
       v-if="loginUserStore.loginUser.id"
       class="floating-sider"
-      :class="{ 'is-pinned': pinned, 'is-collapsed': collapsed }"
+      :class="{ 'is-pinned': pinned, 'is-collapsed': collapsed, 'no-transition': noTransition }"
+      @mouseenter="handleSiderMouseEnter"
       @mouseleave="handleMouseLeave"
     >
       <!-- 侧边栏头部 -->
@@ -44,7 +45,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, h, ref, watchEffect } from 'vue'
+import { computed, h, nextTick, ref, watchEffect } from 'vue'
 import {
   PictureOutlined,
   UserOutlined,
@@ -202,23 +203,39 @@ watchEffect(() => {
 // === 侧边栏收起/展开控制逻辑 ===
 const collapsed = ref(true)
 const pinned = ref(false)
+const noTransition = ref(false)
 let hoverTimeout: number | null = null
 
 const togglePinned = () => {
   pinned.value = !pinned.value
   if (pinned.value) {
+    noTransition.value = true
     collapsed.value = false
+    nextTick(() => {
+      noTransition.value = false
+    })
   }
 }
 
 const handleMouseEnter = () => {
   if (pinned.value) return
   if (hoverTimeout) clearTimeout(hoverTimeout)
+  // 展开时禁用动画，让侧边栏瞬间到位，确保 mouseenter 能可靠触发
+  noTransition.value = true
   collapsed.value = false
+  nextTick(() => {
+    noTransition.value = false
+  })
+}
+
+const handleSiderMouseEnter = () => {
+  if (pinned.value) return
+  if (hoverTimeout) clearTimeout(hoverTimeout)
 }
 
 const handleMouseLeave = () => {
   if (pinned.value) return
+  // 收起时保留动画：流畅滑出
   hoverTimeout = window.setTimeout(() => {
     collapsed.value = true
   }, 200)
@@ -294,15 +311,29 @@ const handleMouseLeave = () => {
   border-right: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 0 16px 16px 0;
   transform: translateX(0);
+  opacity: 1;
+  visibility: visible;
   transition:
     transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.25s ease,
+    visibility 0.25s ease,
     box-shadow 0.3s ease;
   will-change: transform;
 }
 
 .floating-sider.is-collapsed {
   transform: translateX(-100%);
+  opacity: 0;
+  visibility: hidden;
   pointer-events: none;
+}
+
+/* 展开时禁用 transform transition，让侧边栏瞬间到位，确保 mouseenter 能可靠触发 */
+.floating-sider.no-transition {
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease,
+    box-shadow 0.3s ease;
 }
 
 .floating-sider.is-pinned {
